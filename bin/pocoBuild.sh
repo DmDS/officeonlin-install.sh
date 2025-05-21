@@ -9,7 +9,8 @@
 if [ "$(du -s ${poco_dir} | awk '{print $1}')" -lt 100000 ] || ${poco_forcebuild}; then
   cd "$poco_dir" || exit
   echo $poco_version
-  if [[ $poco_version == "1.13."* ]]; then
+#  if [[ $poco_version == "1.13."* ]]; then
+  if [ $poco_version == "1.13."* ] || [ $poco_version == "1.14."* ]; then
    sudo -Hu cool ./configure --no-sqlparser || exit 3
   else
    sudo -Hu cool ./configure || exit 3
