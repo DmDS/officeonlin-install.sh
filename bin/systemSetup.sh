@@ -108,6 +108,9 @@ fi
 if [ "${DIST}" = "Ubuntu" ]; then
        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
        apt-get install nodejs -y
+       apt-get install libnss3-dev -y
+       apt install python3-pip -y
+       pip3 install --force-reinstall ninja --break-system-packages
 fi
 if ${lo_non_free_ttf}; then
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
