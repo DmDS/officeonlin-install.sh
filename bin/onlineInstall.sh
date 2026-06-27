@@ -4,26 +4,29 @@
 #####################
 #### coolwsd Installation ###
 make install
-mkdir /etc/coolwsd
+
+mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
+
+_COOL_ETC_DIR="${cool_sysconfdir:-${cool_prefix}/etc}/coolwsd"
 
 ### clean unwanted configuration files and add wopi host
 if [ -f "${cool_dir}/coolwsd.xml" ]; then
-  if [ ! -f ${cool_sysconfdir:-cool_prefix/etc}/coolwsd/coolwsd.xml ]; then
-    mv "${cool_dir}/coolwsd.xml" "${cool_sysconfdir:-cool_prefix/etc}/coolwsd/coolwsd.xml"
+  if [ ! -f "${_COOL_ETC_DIR}/coolwsd.xml" ]; then
+    mkdir -p "${_COOL_ETC_DIR}"
+    mv "${cool_dir}/coolwsd.xml" "${_COOL_ETC_DIR}/coolwsd.xml"
   else
     rm "${cool_dir}/coolwsd.xml"
   fi
 fi
-[ -n "$allowed_domains" ] && addwopihost "${cool_sysconfdir:-cool_prefix/etc}/coolwsd/coolwsd.xml" "$allowed_domains"
+
+[ -n "$allowed_domains" ] && addwopihost "${_COOL_ETC_DIR}/coolwsd.xml" "$allowed_domains"
 
 # create log file for cool user
 if [ -n "${cool_logfile}" ]; then
   [ ! -f ${cool_logfile} ] && touch ${cool_logfile}
   chown cool:cool ${cool_logfile}
 fi
-## create the hello-world file for test & demo
-# sudo -Hu cool cp ${cool_dir}/test/data/hello.odt ${cool_dir}/test/data/hello-world.odt
 
 if [ ! -f /lib/systemd/system/$coolwsd_service_name.service ]; then
   [ -z "$admin_pwd" ] && admin_pwd=$(randpass 10 0)
@@ -48,7 +51,7 @@ EOT
 fi
 
 if [ ! -f /etc/coolwsd/ca-chain.cert.pem ]; then
-  mkdir /etc/coolwsd
+  mkdir -p /etc/coolwsd
   openssl genrsa -out /etc/coolwsd/key.pem 4096
   openssl req -out /etc/coolwsd/cert.csr -key /etc/coolwsd/key.pem -new -sha256 -nodes -subj "/C=DE/OU=onlineoffice-install.com/CN=onlineoffice-install.com/emailAddress=nomail@nodo.com"
   openssl x509 -req -days 1825 -in /etc/coolwsd/cert.csr -signkey /etc/coolwsd/key.pem -out /etc/coolwsd/cert.pem
@@ -56,6 +59,7 @@ if [ ! -f /etc/coolwsd/ca-chain.cert.pem ]; then
   chown cool:cool /etc/coolwsd/key.pem
   chmod 600 /etc/coolwsd/key.pem
 fi
+
 if [ ! -e /etc/systemd/system/$coolwsd_service_name.service ]; then
-  ln /lib/systemd/system/$coolwsd_service_name.service /etc/systemd/system/$coolwsd_service_name.service
+  ln -s /lib/systemd/system/$coolwsd_service_name.service /etc/systemd/system/$coolwsd_service_name.service
 fi
