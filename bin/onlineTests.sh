@@ -1,6 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2154
 # tests script
+chown -R cool:cool /opt/cool/jails
 systemctl start $coolwsd_service_name.service
 rm -rf ${lo_dir}/workdir
 sleep 18
