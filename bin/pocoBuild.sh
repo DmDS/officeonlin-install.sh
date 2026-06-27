@@ -1,22 +1,29 @@
 #!/bin/bash
-# shellcheck disable=SC2154
-# this script contains:
-## configure script
-## build script
-## test if the poco library has already been compiled
-# (the dir size should be around 450000ko vs 65000ko when just extracted)
-# so let say arbitrary : do compilation when folder size is less than 100Mo
-if [ "$(du -s ${poco_dir} | awk '{print $1}')" -lt 100000 ] || ${poco_forcebuild}; then
-  cd "$poco_dir" || exit
-  echo $poco_version
-#  if [[ $poco_version == "1.13."* ]]; then
-  if [ $poco_version == "1.13."* ] || [ $poco_version == "1.14."* ]; then
-   sudo -Hu cool ./configure --no-sqlparser || exit 3
-  else
-   sudo -Hu cool ./configure || exit 3
-  fi
-  $poco_forcebuild && sudo -Hu cool make clean
-  sudo -Hu cool make -j${cpu}
-  # poco take around 22/${cpu} minutes to compile on fast cpu
-  make install
+# shellcheck disable=SC2154,SC2034
+set -e
+
+if ! command -v cmake &> /dev/null; then
+  echo "CMake is required to build modern Poco but not found. Installing..."
+  apt-get install cmake -y
 fi
+
+POCO_BUILD_DIR="/opt/poco-1.15.3-all"
+
+cd ${POCO_BUILD_DIR} || exit 1
+
+echo "Configuring Poco with CMake..."
+sudo -Hu cool bash -c "cd ${POCO_BUILD_DIR} && mkdir -p build && cd build && cmake .. \
+  -DPOCO_ENABLE_SAMPLES=OFF \
+  -DPOCO_ENABLE_TESTS=OFF \
+  -DBUILD_SHARED_LIBS=ON \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr/local"
+
+echo "Building Poco (this will take a few minutes)..."
+sudo -Hu cool make -C ${POCO_BUILD_DIR}/build -j${cpu}
+
+echo "Installing Poco..."
+make -C ${POCO_BUILD_DIR}/build install
+ldconfig
+
+set +e
