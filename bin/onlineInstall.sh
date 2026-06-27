@@ -1,65 +1,92 @@
 #!/bin/bash
-# shellcheck disable=SC2154
-# install script
-#####################
-#### coolwsd Installation ###
-make install
+# shellcheck disable=SC2154,SC2034
+# this script contains:
+## Download FULL Monorepo (Online + Engine) & Prepare Structure
 
-mkdir -p /etc/coolwsd
-mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
+if ls /usr/local/lib/libPocoCrypto.so.* 1> /dev/null 2>&1; then
+  cp /usr/local/lib/libPocoCrypto.so.* /usr/lib/
+  cp /usr/local/lib/libPocoXML.so.* /usr/lib/
+fi
 
-_COOL_ETC_DIR="${cool_sysconfdir:-${cool_prefix}/etc}/coolwsd"
+set -e
 
-### clean unwanted configuration files and add wopi host
-if [ -f "${cool_dir}/coolwsd.xml" ]; then
-  if [ ! -f "${_COOL_ETC_DIR}/coolwsd.xml" ]; then
-    mkdir -p "${_COOL_ETC_DIR}"
-    mv "${cool_dir}/coolwsd.xml" "${_COOL_ETC_DIR}/coolwsd.xml"
+if [[ -z "$cool_src_repo" || "$cool_src_repo" == *"CollaboraOnline/online.git"* ]]; then
+  cool_src_repo="https://github.com/CollaboraOnline/online.mirror.git"
+fi
+
+if [ -d "${cool_dir}/wsd" ] && [ -d "${cool_dir}/engine/include" ]; then
+  echo "Full monorepo already exists. Skipping download."
+else
+  echo "Preparing to download FULL monorepo (~1.5-2GB)..."
+  echo "NOTE: If download interrupts, just re-run the script. It WILL RESUME!"
+
+  if [ ! -d "${cool_dir}/.git" ]; then
+    rm -rf ${cool_dir}
+    mkdir -p ${cool_dir}
+    cd ${cool_dir}
+    git init
+    git remote add origin "${cool_src_repo}"
+    git config advice.detachedHead false
   else
-    rm "${cool_dir}/coolwsd.xml"
+    cd ${cool_dir}
+  fi
+
+  TARGET_REF="${cool_src_tag:-${cool_src_branch:-main}}"
+
+  echo "Fetching '${TARGET_REF}' (this will take a while, but is resumable)..."
+  if ! git fetch --progress --depth=1 origin "${TARGET_REF}"; then
+     echo ""
+     echo "!!! DOWNLOAD INTERRUPTED !!!"
+     echo "Don't panic. Just run ./officeonline-install2.sh again."
+     echo "Git will resume exactly from where it stopped."
+     return 1
+  fi
+
+  echo "Extracting files..."
+  git checkout FETCH_HEAD
+  chown -R cool:cool ${cool_dir}
+  echo "Full monorepo downloaded successfully!"
+fi
+
+if [ "${DIST}" = "Debian" ]; then
+  if [ "${CODENAME}" = "bullseye" ] || [ "${CODENAME}" = "bookworm" ]; then
+    apt-get install libssl-dev -y
+  elif [ "${CODENAME}" = "buster" ]; then
+    apt-get install libssl-dev -y
+  else
+    apt-get install nodejs-dev node-gyp libssl1.0-dev npm -y
+  fi
+else
+  apt-get install nodejs libssl-dev -y
+fi
+
+set +e
+if ! npm -g list jake >/dev/null; then
+  npm install -g jake
+fi
+
+if [ -f "${cool_dir}/wsd/AdminModel.hpp" ]; then
+  if ! grep -q "^#include <list>" "${cool_dir}/wsd/AdminModel.hpp"; then
+    sed -i '16a\#include <list>' "${cool_dir}/wsd/AdminModel.hpp"
   fi
 fi
 
-[ -n "$allowed_domains" ] && addwopihost "${_COOL_ETC_DIR}/coolwsd.xml" "$allowed_domains"
+set -e
+ENGINE_DIR="${cool_dir}/engine"
+ENGINE_INSTDIR="${ENGINE_DIR}/instdir"
 
-# create log file for cool user
-if [ -n "${cool_logfile}" ]; then
-  [ ! -f ${cool_logfile} ] && touch ${cool_logfile}
-  chown cool:cool ${cool_logfile}
+if [ ! -d "${ENGINE_INSTDIR}/program" ]; then
+  if [ -d "${lo_dir}/instdir" ]; then
+    echo "Moving pre-compiled engine binaries into the monorepo engine/ folder..."
+    mv "${lo_dir}/instdir" "${ENGINE_DIR}/"
+    chown -R cool:cool "${ENGINE_INSTDIR}"
+    echo "Engine binaries successfully integrated."
+  else
+    echo "ERROR: Engine binaries not found at ${lo_dir}/instdir."
+    return 1
+  fi
+else
+  echo "Engine binaries already in place. Skipping."
 fi
 
-if [ ! -f /lib/systemd/system/$coolwsd_service_name.service ]; then
-  [ -z "$admin_pwd" ] && admin_pwd=$(randpass 10 0)
-  cat <<EOT > /lib/systemd/system/$coolwsd_service_name.service
-[Unit]
-Description=LibreOffice OnLine WebSocket Daemon
-After=network.target
-
-[Service]
-EnvironmentFile=-/etc/sysconfig/coolwsd
-ExecStartPre=/bin/mkdir -p /usr/local/var/cache/coolwsd
-ExecStartPre=/bin/chown cool: /usr/local/var/cache/coolwsd
-PermissionsStartOnly=true
-ExecStart=${cool_dir}/coolwsd --o:sys_template_path=${cool_dir}/systemplate --o:lo_template_path=${lo_dir}/instdir  --o:child_root_path=${cool_dir}/jails --o:admin_console.username=admin --o:admin_console.password="$admin_pwd"
-User=cool
-KillMode=control-group
-# Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOT
-fi
-
-if [ ! -f /etc/coolwsd/ca-chain.cert.pem ]; then
-  mkdir -p /etc/coolwsd
-  openssl genrsa -out /etc/coolwsd/key.pem 4096
-  openssl req -out /etc/coolwsd/cert.csr -key /etc/coolwsd/key.pem -new -sha256 -nodes -subj "/C=DE/OU=onlineoffice-install.com/CN=onlineoffice-install.com/emailAddress=nomail@nodo.com"
-  openssl x509 -req -days 1825 -in /etc/coolwsd/cert.csr -signkey /etc/coolwsd/key.pem -out /etc/coolwsd/cert.pem
-  openssl x509 -req -days 1825 -in /etc/coolwsd/cert.csr -signkey /etc/coolwsd/key.pem -out /etc/coolwsd/ca-chain.cert.pem
-  chown cool:cool /etc/coolwsd/key.pem
-  chmod 600 /etc/coolwsd/key.pem
-fi
-
-if [ ! -e /etc/systemd/system/$coolwsd_service_name.service ]; then
-  ln -s /lib/systemd/system/$coolwsd_service_name.service /etc/systemd/system/$coolwsd_service_name.service
-fi
+set +e
