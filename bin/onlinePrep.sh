@@ -3,7 +3,6 @@
 # this script contains:
 ## Download FULL Monorepo (Online + Engine) & Prepare Structure
 
-# Копируем собранные библиотеки Poco
 if ls /usr/local/lib/libPocoCrypto.so.* 1> /dev/null 2>&1; then
   cp /usr/local/lib/libPocoCrypto.so.* /usr/lib/
   cp /usr/local/lib/libPocoXML.so.* /usr/lib/
@@ -11,14 +10,10 @@ fi
 
 set -e
 
-# ПЕРЕХВАТ СТАРОГО РЕПОЗИТОРИЯ
 if [[ -z "$cool_src_repo" || "$cool_src_repo" == *"CollaboraOnline/online.git"* ]]; then
   cool_src_repo="https://github.com/CollaboraOnline/online.mirror.git"
 fi
 
-###############################################################################
-#### 1. ПОЛНАЯ ЗАГРУЗКА МОНОРЕПОЗИТОРИЯ (С ПОДДЕРЖКОЙ ДОКАЧКИ) ##########
-###############################################################################
 if [ -d "${cool_dir}/wsd" ] && [ -d "${cool_dir}/engine/include" ]; then
   echo "Full monorepo already exists. Skipping download."
 else
@@ -37,7 +32,6 @@ else
     cd ${cool_dir}
   fi
 
-  # Берем ветку или тег из конфига (если ничего нет, по умолчанию main)
   TARGET_REF="${cool_src_tag:-${cool_src_branch:-main}}"
 
   echo "Fetching '${TARGET_REF}' (this will take a while, but is resumable)..."
@@ -55,9 +49,6 @@ else
   echo "Full monorepo downloaded successfully!"
 fi
 
-###############################################################################
-#### 2. УСТАНОВКА ЗАВИСИМОСТЕЙ ##############################################
-###############################################################################
 if [ "${DIST}" = "Debian" ]; then
   if [ "${CODENAME}" = "bullseye" ] || [ "${CODENAME}" = "bookworm" ]; then
     apt-get install libssl-dev -y
@@ -82,15 +73,10 @@ if [ -f "${cool_dir}/wsd/AdminModel.hpp" ]; then
   fi
 fi
 
-###############################################################################
-#### 3. ПОДМЕНА ИСХОДНИКОВ ДВИЖКА НА ГОТОВЫЕ БИНАРНИКИ ####################
-###############################################################################
 set -e
 ENGINE_DIR="${cool_dir}/engine"
 ENGINE_INSTDIR="${ENGINE_DIR}/instdir"
 
-# В полном монорепозитории заголовки (COKit) и исходники уже на месте в engine/.
-# Нам нужно только положить СКОМПИЛИРОВАННЫЕ бинарники (instdir) рядом с ними.
 if [ ! -d "${ENGINE_INSTDIR}/program" ]; then
   if [ -d "${lo_dir}/instdir" ]; then
     echo "Moving pre-compiled engine binaries into the monorepo engine/ folder..."
