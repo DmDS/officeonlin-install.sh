@@ -7,15 +7,19 @@
 mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
 
-make install
+# 1. ЖЕЛЕЗОБЕТОННЫЙ БЭКАП КОНФИГА
+if [ -f /etc/coolwsd/coolwsd.xml ]; then
+  echo "Backing up coolwsd.xml..."
+  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.saved
+fi
 
-# 2. ПРОВЕРКА И ВОССТАНОВЛЕНИЕ
-if [ -f /tmp/coolwsd.xml.backup ]; then
-  echo "Restoring original coolwsd.xml from backup..."
-  mv -f /tmp/coolwsd.xml.backup /etc/coolwsd/coolwsd.xml
-elif [ -f "${cool_dir}/coolwsd.xml" ]; then
-  echo "Moving new coolwsd.xml to /etc/coolwsd/"
-  mv "${cool_dir}/coolwsd.xml" /etc/coolwsd/coolwsd.xml
+echo "Running make install (hiding test spam)..."
+make -i install 2>&1 | grep -v -E "unithttplib|Assertion|Expected:|Actual:|^=+|test\.cpp|Failures !!!|To reproduce" || true
+
+if [ -f /tmp/coolwsd.xml.saved ]; then
+  echo "Restoring original coolwsd.xml..."
+  cp -f /tmp/coolwsd.xml.saved /etc/coolwsd/coolwsd.xml
+  rm -f /tmp/coolwsd.xml.saved
 fi
 
 chown cool:cool /etc/coolwsd/coolwsd.xml
