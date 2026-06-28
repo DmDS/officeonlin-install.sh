@@ -3,11 +3,6 @@
 # this script contains:
 ## Download FULL Monorepo (Online + Engine) & Prepare Structure
 
-if [ -f /etc/coolwsd/coolwsd.xml ]; then
-  echo "Backing up coolwsd.xml to /tmp/ before any build operations..."
-  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.backup
-fi
-
 if ls /usr/local/lib/libPocoCrypto.so.* 1> /dev/null 2>&1; then
   cp /usr/local/lib/libPocoCrypto.so.* /usr/lib/
   cp /usr/local/lib/libPocoXML.so.* /usr/lib/
@@ -15,6 +10,7 @@ fi
 
 set -e
 
+# ПЕРЕХВАТ СТАРОГО РЕПОЗИТОРИЯ
 if [[ -z "$cool_src_repo" || "$cool_src_repo" == *"CollaboraOnline/online.git"* ]]; then
   cool_src_repo="https://github.com/CollaboraOnline/online.mirror.git"
 fi
@@ -22,7 +18,7 @@ fi
 if [ -d "${cool_dir}/wsd" ] && [ -d "${cool_dir}/engine/include" ]; then
   echo "Full monorepo already exists. Skipping download."
 else
-  echo "Preparing to download FULL monorepo (~1.5-2GB)..."
+  echo "Preparing to download FULL monorepo..."
   echo "NOTE: If download interrupts, just re-run the script. It WILL RESUME!"
 
   if [ ! -d "${cool_dir}/.git" ]; then
@@ -38,12 +34,9 @@ else
 
   TARGET_REF="${cool_src_tag:-${cool_src_branch:-main}}"
 
-  echo "Fetching '${TARGET_REF}' (this will take a while, but is resumable)..."
+  echo "Fetching '${TARGET_REF}'..."
   if ! git fetch --progress --depth=1 origin "${TARGET_REF}"; then
-     echo ""
-     echo "!!! DOWNLOAD INTERRUPTED !!!"
-     echo "Don't panic. Just run ./officeonline-install2.sh again."
-     echo "Git will resume exactly from where it stopped."
+     echo "!!! DOWNLOAD INTERRUPTED !!! Run the script again to RESUME!"
      return 1
   fi
 
@@ -70,6 +63,7 @@ if ! npm -g list jake >/dev/null; then
   npm install -g jake
 fi
 
+# Патч для AdminModel.hpp
 if [ -f "${cool_dir}/wsd/AdminModel.hpp" ]; then
   if ! grep -q "^#include <list>" "${cool_dir}/wsd/AdminModel.hpp"; then
     sed -i '16a\#include <list>' "${cool_dir}/wsd/AdminModel.hpp"
