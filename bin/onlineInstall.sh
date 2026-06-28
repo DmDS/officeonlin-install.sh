@@ -4,29 +4,22 @@
 #####################
 #### coolwsd Installation ###
 
-COOLWSD_XML="/etc/coolwsd/coolwsd.xml"
-
-if [ -f "${COOLWSD_XML}" ]; then
-  echo "Protecting existing coolwsd.xml from being overwritten by make install..."
-  cp "${COOLWSD_XML}" /tmp/coolwsd.xml.backup
-fi
-
 mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
 
 make install
 
+# 2. ПРОВЕРКА И ВОССТАНОВЛЕНИЕ
 if [ -f /tmp/coolwsd.xml.backup ]; then
-  echo "Restoring original coolwsd.xml..."
-  mv -f /tmp/coolwsd.xml.backup "${COOLWSD_XML}"
-  rm -f /tmp/coolwsd.xml.backup
+  echo "Restoring original coolwsd.xml from backup..."
+  mv -f /tmp/coolwsd.xml.backup /etc/coolwsd/coolwsd.xml
 elif [ -f "${cool_dir}/coolwsd.xml" ]; then
   echo "Moving new coolwsd.xml to /etc/coolwsd/"
-  mv "${cool_dir}/coolwsd.xml" "${COOLWSD_XML}"
+  mv "${cool_dir}/coolwsd.xml" /etc/coolwsd/coolwsd.xml
 fi
 
-chown cool:cool "${COOLWSD_XML}"
-[ -n "$allowed_domains" ] && addwopihost "${COOLWSD_XML}" "$allowed_domains"
+chown cool:cool /etc/coolwsd/coolwsd.xml
+[ -n "$allowed_domains" ] && addwopihost /etc/coolwsd/coolwsd.xml "$allowed_domains"
 
 # create log file for cool user
 if [ -n "${cool_logfile}" ]; then
