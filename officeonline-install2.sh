@@ -167,4 +167,19 @@ source "$ScriptFullPath/bin/corePrep2.sh"
   source "$ScriptFullPath/bin/onlineInstall.sh"
 } > >(tee -a ${log_dir}/cool-compilation.log) 2> >(tee -a ${log_dir}/cool-compilation.log >&2)
 
+### Testing coolwsd ###
+if ${sh_interactive}; then
+  admin_pwd=$(awk -F'password=' '{printf $2}' /lib/systemd/system/${coolwsd_service_name}.service )
+  dialog --backtitle "Information" \
+  --title "Note" \
+  --msgbox "The installation logs are in ${log_dir}. After reboot you can use $coolwsd_service_name.service using: systemctl (start>
+Your user is admin and password is $admin_pwd. Please change your user and/or password in (/lib/systemd/system/$coolwsd_service_nam>
+after that run (systemctl daemon-reload && systemctl restart $coolwsd_service_name.service).\\nPlease press OK and wait 15 sec. I w>
+  clear
+fi
+{
+  # shellcheck source=/project/bin/onlineTests.sh
+  source "$ScriptFullPath/bin/onlineTests.sh"
+} > >(tee -a ${log_dir}/cool-compilation.log) 2> >(tee -a ${log_dir}/cool-compilation.log >&2)
+
 exit 0
