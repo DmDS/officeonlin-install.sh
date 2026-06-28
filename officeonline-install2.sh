@@ -18,6 +18,12 @@ whendiditstopped() {
 }
 
 if [[ $(id -u) -ne 0 ]] ; then echo 'Please run me as root or "sudo ./officeonline-install.sh"' ; exit 1 ; fi
+
+if [ -f /etc/coolwsd/coolwsd.xml ]; then
+  echo "Backing up coolwsd.xml to /tmp/..."
+  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.saved
+fi
+
 ScriptFullPath="$(dirname "$(realpath $0)")"
 # shellcheck source=/project/lib/checksys.sh
 # shellcheck source=/project/lib/helpmenu.sh
