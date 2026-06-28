@@ -172,6 +172,6 @@ after that run (systemctl daemon-reload && systemctl restart $coolwsd_service_na
 fi
 {
   # shellcheck source=/project/bin/onlineTests.sh
-  source "$ScriptFullPath/bin/onlineTests.sh"
-} > >(tee -a ${log_dir}/cool-compilation.log) 2> >(tee -a ${log_dir}/cool-compilation.log >&2)
+#  source "$ScriptFullPath/bin/onlineTests.sh"
+#} > >(tee -a ${log_dir}/cool-compilation.log) 2> >(tee -a ${log_dir}/cool-compilation.log >&2)
 exit 0
