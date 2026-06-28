@@ -17,7 +17,7 @@ fi
 if [ -d "${cool_dir}/wsd" ] && [ -d "${cool_dir}/engine/include" ]; then
   echo "Full monorepo already exists. Skipping download."
 else
-  echo "Preparing to download FULL monorepo (~1.5-2GB)..."
+  echo "Preparing to download FULL monorepo..."
   echo "NOTE: If download interrupts, just re-run the script. It WILL RESUME!"
 
   if [ ! -d "${cool_dir}/.git" ]; then
@@ -26,7 +26,6 @@ else
     cd ${cool_dir}
     git init
     git remote add origin "${cool_src_repo}"
-    # Отключаем предупреждения о detached HEAD
     git config advice.detachedHead false
   else
     cd ${cool_dir}
@@ -66,7 +65,6 @@ if ! npm -g list jake >/dev/null; then
   npm install -g jake
 fi
 
-# Патч для старой версии (в новых main он может не понадобиться, но оставим для совместимости)
 if [ -f "${cool_dir}/wsd/AdminModel.hpp" ]; then
   if ! grep -q "^#include <list>" "${cool_dir}/wsd/AdminModel.hpp"; then
     sed -i '16a\#include <list>' "${cool_dir}/wsd/AdminModel.hpp"
