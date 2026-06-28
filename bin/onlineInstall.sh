@@ -7,14 +7,14 @@
 mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
 
-echo "Running make install (hiding test spam)..."
-#make -i install 2>&1 | grep -v -E "unithttplib|Assertion|Expected:|Actual:|^=+|test\.cpp|Failures !!!|To reproduce" || true
+echo "Running make install..."
 make -i install >/dev/null 2>&1 || true
 
 if [ -f /tmp/coolwsd.xml.saved ]; then
   echo "Restoring original coolwsd.xml..."
   cp -f /tmp/coolwsd.xml.saved /etc/coolwsd/coolwsd.xml
   rm -f /tmp/coolwsd.xml.saved
+  rm -f /opt/cool/coolwsd.xml
 fi
 
 chown cool:cool /etc/coolwsd/coolwsd.xml
