@@ -7,12 +7,6 @@
 mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
 
-# 1. ЖЕЛЕЗОБЕТОННЫЙ БЭКАП КОНФИГА
-if [ -f /etc/coolwsd/coolwsd.xml ]; then
-  echo "Backing up coolwsd.xml..."
-  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.saved
-fi
-
 echo "Running make install (hiding test spam)..."
 make -i install 2>&1 | grep -v -E "unithttplib|Assertion|Expected:|Actual:|^=+|test\.cpp|Failures !!!|To reproduce" || true
 
