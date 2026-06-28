@@ -3,19 +3,26 @@
 # install script
 #####################
 #### coolwsd Installation ###
-make install
+
+COOLWSD_XML="/etc/coolwsd/coolwsd.xml"
+
+if [ -f "${COOLWSD_XML}" ]; then
+  echo "Protecting existing coolwsd.xml from being overwritten by make install..."
+  cp "${COOLWSD_XML}" /tmp/coolwsd.xml.backup
+fi
 
 mkdir -p /etc/coolwsd
 mkdir -p "${cool_localstatedir}/cache/coolwsd" && chown -R cool:cool "${cool_localstatedir}/cache/coolwsd"
 
-COOLWSD_XML="/etc/coolwsd/coolwsd.xml"
-if [ ! -f "${COOLWSD_XML}" ]; then
-  if [ -f "${cool_dir}/coolwsd.xml" ]; then
-    echo "Moving coolwsd.xml to /etc/coolwsd/"
-    mv "${cool_dir}/coolwsd.xml" "${COOLWSD_XML}"
-  fi
-else
-  [ -f "${cool_dir}/coolwsd.xml" ] && rm "${cool_dir}/coolwsd.xml"
+make install
+
+if [ -f /tmp/coolwsd.xml.backup ]; then
+  echo "Restoring original coolwsd.xml..."
+  mv -f /tmp/coolwsd.xml.backup "${COOLWSD_XML}"
+  rm -f /tmp/coolwsd.xml.backup
+elif [ -f "${cool_dir}/coolwsd.xml" ]; then
+  echo "Moving new coolwsd.xml to /etc/coolwsd/"
+  mv "${cool_dir}/coolwsd.xml" "${COOLWSD_XML}"
 fi
 
 chown cool:cool "${COOLWSD_XML}"
@@ -39,7 +46,6 @@ EnvironmentFile=-/etc/sysconfig/coolwsd
 ExecStartPre=/bin/mkdir -p /usr/local/var/cache/coolwsd
 ExecStartPre=/bin/chown cool: /usr/local/var/cache/coolwsd
 PermissionsStartOnly=true
-# ИЗМЕНЕНО: lo_template_path теперь указывает на engine/instdir внутри монорепозитория
 ExecStart=${cool_dir}/coolwsd --o:sys_template_path=${cool_dir}/systemplate --o:lo_template_path=${cool_dir}/engine/instdir --o:child_root_path=${cool_dir}/jails --o:admin_console.username=admin --o:admin_console.password="$admin_pwd"
 User=cool
 KillMode=control-group
