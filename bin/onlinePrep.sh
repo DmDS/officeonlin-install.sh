@@ -3,6 +3,11 @@
 # this script contains:
 ## Download FULL Monorepo (Online + Engine) & Prepare Structure
 
+if [ -f /etc/coolwsd/coolwsd.xml ]; then
+  echo "Backing up coolwsd.xml to /tmp/ before any build operations..."
+  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.backup
+fi
+
 if ls /usr/local/lib/libPocoCrypto.so.* 1> /dev/null 2>&1; then
   cp /usr/local/lib/libPocoCrypto.so.* /usr/lib/
   cp /usr/local/lib/libPocoXML.so.* /usr/lib/
@@ -17,7 +22,7 @@ fi
 if [ -d "${cool_dir}/wsd" ] && [ -d "${cool_dir}/engine/include" ]; then
   echo "Full monorepo already exists. Skipping download."
 else
-  echo "Preparing to download FULL monorepo..."
+  echo "Preparing to download FULL monorepo (~1.5-2GB)..."
   echo "NOTE: If download interrupts, just re-run the script. It WILL RESUME!"
 
   if [ ! -d "${cool_dir}/.git" ]; then
