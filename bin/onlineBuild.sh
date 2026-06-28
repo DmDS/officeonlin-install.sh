@@ -31,12 +31,6 @@ fi
 chown cool:cool ${cool_dir} -R
 cd ${cool_dir} || exit
 
-# ЗАЩИТА КОНФИГА: Прячем настройки ДО того, как make uninstall их удалит!
-if ${cool_forcebuild} && [ -f /etc/coolwsd/coolwsd.xml ]; then
-  echo "Protecting coolwsd.xml from 'make uninstall'..."
-  cp -f /etc/coolwsd/coolwsd.xml /tmp/coolwsd.xml.backup
-fi
-
  ${cool_forcebuild} && [ -f ${cool_dir}/configure ] && make clean uninstall
 sudo -Hu cool ./autogen.sh
 
