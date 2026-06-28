@@ -7,7 +7,6 @@
 #####################
 #### coolwsd & loleaflet Build ##
 
-# Idempotence : do not recompile coolwsd, install & test if already done
 if [ -f ${cool_dir}/coolwsd ] && ! ${cool_forcebuild}; then
   if [ -f /lib/systemd/system/$coolwsd_service_name.service ]; then
     admin_pwd=$(awk -F'password=' '{printf $2}' /lib/systemd/system/$coolwsd_service_name.service )
@@ -40,7 +39,7 @@ sudo -Hu cool ./autogen.sh
 [ -n "${cool_localstatedir}" ] && cool_configure_opts="${cool_configure_opts} --localstatedir=${cool_localstatedir}"
 
 echo ""
-echo "Configuring coolwsd (engine will be detected automatically from engine/ directory)..."
+echo "Configuring coolwsd..."
 echo ""
 
 sudo -Hu cool bash -c "./configure --enable-silent-rules --with-max-connections=$cool_maxcon --with-max-documents=$cool_maxdoc --with-poco-includes=/usr/local/include --with-poco-libs=/usr/local/lib ${cool_configure_opts}" || exit 4
@@ -57,5 +56,4 @@ if [ -f /etc/sudoers ]; then
   fi
 fi
 
-##leave if make coolwsd has failed
 [ ${_coolwsd_make_rc} -ne 0 ] && exit 4
